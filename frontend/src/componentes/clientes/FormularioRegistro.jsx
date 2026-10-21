@@ -8,67 +8,167 @@ export default function FormularioRegistro({ alRegistrar, irALogin }) {
   const [telefono, setTelefono] = useState('');
   const [ciudad, setCiudad] = useState('');
   const [pass, setPass] = useState('');
-  const [error, setError] = useState('');
+  const [aceptaHabeasData, setAceptaHabeasData] = useState(false);
+  const [errores, setErrores] = useState({});
+
+  // Lista de ciudades principales de Colombia
+  const ciudadesColombia = [
+    'Soacha', 'Bogotá D.C.', 'Medellín', 'Cali', 'Barranquilla', 
+    'Cartagena', 'Bucaramanga', 'Pereira', 'Manizales', 'Cúcuta', 
+    'Ibagué', 'Villavicencio', 'Santa Marta', 'Pastos', 'Montería'
+  ];
+
+  // Restricciones de entrada estricta mientras se escribe
+  const handleDocNumChange = (e) => {
+    const val = e.target.value.replace(/\D/g, ''); // Elimina letras
+    setDocNum(val);
+  };
+
+  const handleNombreChange = (e) => {
+    const val = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); // Solo letras y espacios
+    setNombre(val);
+  };
+
+  const handleTelefonoChange = (e) => {
+    const val = e.target.value.replace(/\D/g, ''); // Solo números
+    if (val.length <= 10) setTelefono(val);
+  };
+
+  const validarFormulario = () => {
+    let err = {};
+
+    // Validar Documento
+    if (docTipo === 'CC') {
+      if (!/^\d{8,10}$/.test(docNum)) err.docNum = 'La cédula debe contener entre 8 y 10 dígitos numéricos.';
+    } else if (docTipo === 'NIT') {
+      if (!/^\d{9,10}$/.test(docNum)) err.docNum = 'El NIT debe contener 9 o 10 dígitos sin guiones.';
+    } else if (docTipo === 'CE') {
+      if (!/^\d{6,10}$/.test(docNum)) err.docNum = 'La Cédula de Extranjería debe tener entre 6 y 10 dígitos.';
+    }
+
+    // Validar Nombre
+    if (nombre.trim().length < 4) {
+      err.nombre = 'El nombre completo debe tener al menos 4 letras.';
+    }
+
+    // Validar Correo
+    if (!correo.toLowerCase().endsWith('@gmail.com')) {
+      err.correo = 'El correo electrónico debe ser una cuenta válida terminada en @gmail.com';
+    }
+
+    // Validar Teléfono Colombia
+    if (!/^3\d{9}$/.test(telefono)) {
+      err.telefono = 'El teléfono debe iniciar por 3 y contener exactamente 10 dígitos numéricos.';
+    }
+
+    // Validar Ciudad
+    if (!ciudad) {
+      err.ciudad = 'Seleccione una ciudad válida de la lista.';
+    }
+
+    // Validar Contraseña Segura
+    const regexPass = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+    if (!regexPass.test(pass)) {
+      err.pass = 'La contraseña debe tener mínimo 8 caracteres, al menos una mayúscula, un número y un símbolo especial.';
+    }
+
+    // Validar Habeas Data
+    if (!aceptaHabeasData) {
+      err.habeas = 'Debe aceptar la política de protección de datos para continuar.';
+    }
+
+    setErrores(err);
+    return Object.keys(err).length === 0;
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!docNum || !nombre || !correo || !pass) {
-      setError('Por favor complete todos los campos obligatorios.');
-      return;
+    if (validarFormulario()) {
+      alRegistrar({
+        nombre,
+        correo: correo.toLowerCase(),
+        docNum,
+        docTipo,
+        telefono,
+        ciudad,
+        pass,
+        rol: 'cliente'
+      });
     }
-    alRegistrar({
-      nombre,
-      correo: correo.toLowerCase(),
-      docNum,
-      docTipo,
-      telefono,
-      ciudad,
-      rol: 'cliente'
-    });
   };
 
   return (
-    <div className="cd" style={{ maxWidth: '650px', margin: '0 auto' }}>
-      <h2 className="t">Registro de Cliente - GAP Core</h2>
-      {error && <p className="er" style={{ fontWeight: 700 }}>{error}</p>}
+    <div>
+      <h2 className="t" style={{ textAlign: 'center', marginBottom: '20px' }}>REGISTRO DE CLIENTE - GAP CORE</h2>
+      
       <form onSubmit={handleSubmit}>
-        <span className="l">Tipo de Documento</span>
+        <span className="l">TIPO DE DOCUMENTO</span>
         <div className="seg">
-          {['CC', 'NIT', 'CE'].map(t => (
-            <button key={t} type="button" className={docTipo === t ? 'on' : ''} onClick={() => setDocTipo(t)}>{t === 'CC' ? 'Cédula' : t === 'NIT' ? 'NIT' : 'Extranjería'}</button>
-          ))}
+          <button type="button" className={docTipo === 'CC' ? 'on' : ''} onClick={() => { setDocTipo('CC'); setDocNum(''); }}>Cédula</button>
+          <button type="button" className={docTipo === 'NIT' ? 'on' : ''} onClick={() => { setDocTipo('NIT'); setDocNum(''); }}>NIT</button>
+          <button type="button" className={docTipo === 'CE' ? 'on' : ''} onClick={() => { setDocTipo('CE'); setDocNum(''); }}>Extranjería</button>
         </div>
 
-        <label className="l">Número de Documento</label>
-        <input className="f" value={docNum} onChange={e => setDocNum(e.target.value)} placeholder="Ej. 1020304050" required />
+        <label className="l">NÚMERO DE DOCUMENTO ({docTipo})</label>
+        <input 
+          className="f" 
+          value={docNum} 
+          onChange={handleDocNumChange} 
+          placeholder={docTipo === 'CC' ? 'Ej. 1020304050' : docTipo === 'NIT' ? 'Ej. 900123456' : 'Ej. 654321'} 
+        />
+        {errores.docNum && <p className="er" style={{ fontSize: '.78rem', marginTop: '-8px', marginBottom: '10px' }}>{errores.docNum}</p>}
 
-        <label className="l">Nombre o Razón Social</label>
-        <input className="f" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej. Juan Pérez" required />
+        <label className="l">NOMBRE O RAZÓN SOCIAL (Solo letras)</label>
+        <input className="f" value={nombre} onChange={handleNombreChange} placeholder="Ej. Julian David Toscano" />
+        {errores.nombre && <p className="er" style={{ fontSize: '.78rem', marginTop: '-8px', marginBottom: '10px' }}>{errores.nombre}</p>}
 
-        <label className="l">Correo Electrónico</label>
-        <input className="f" type="email" value={correo} onChange={e => setCorreo(e.target.value)} placeholder="correo@ejemplo.com" required />
+        <label className="l">CORREO ELECTRÓNICO (@gmail.com)</label>
+        <input className="f" type="email" value={correo} onChange={e => setCorreo(e.target.value)} placeholder="usuario@gmail.com" />
+        {errores.correo && <p className="er" style={{ fontSize: '.78rem', marginTop: '-8px', marginBottom: '10px' }}>{errores.correo}</p>}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <div>
-            <label className="l">Teléfono</label>
-            <input className="f" value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="3000000000" />
+            <label className="l">TELÉFONO (Empieza por 3)</label>
+            <input className="f" value={telefono} onChange={handleTelefonoChange} placeholder="3001234567" maxLength="10" />
+            {errores.telefono && <p className="er" style={{ fontSize: '.75rem', marginTop: '-8px' }}>{errores.telefono}</p>}
           </div>
           <div>
-            <label className="l">Ciudad</label>
-            <input className="f" value={ciudad} onChange={e => setCiudad(e.target.value)} placeholder="Soacha / Bogotá" />
+            <label className="l">CIUDAD</label>
+            <select className="f" value={ciudad} onChange={e => setCiudad(e.target.value)}>
+              <option value="">-- Seleccionar --</option>
+              {ciudadesColombia.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            {errores.ciudad && <p className="er" style={{ fontSize: '.75rem', marginTop: '-8px' }}>{errores.ciudad}</p>}
           </div>
         </div>
 
-        <label className="l">Contraseña</label>
-        <input className="f" type="password" value={pass} onChange={e => setPass(e.target.value)} placeholder="Mínimo 8 caracteres" required />
+        <label className="l">CONTRASEÑA (Min. 8, Mayúscula, Número y Símbolo)</label>
+        <input className="f" type="password" value={pass} onChange={e => setPass(e.target.value)} placeholder="Ej. Colombia2026*" />
+        {errores.pass && <p className="er" style={{ fontSize: '.78rem', marginTop: '-8px', marginBottom: '10px' }}>{errores.pass}</p>}
 
-        <p style={{ fontSize: '.75rem', color: 'var(--mu)', margin: '10px 0' }}>
-          Protección de datos personales conforme a la Ley 1581 de 2012 en Colombia.
-        </p>
+        {/* SWITCH HABAEAS DATA */}
+        <div style={{ padding: '12px', background: 'var(--bg)', borderRadius: '12px', margin: '14px 0', border: '1px solid var(--bd)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+            <span style={{ fontSize: '.8rem', fontWeight: 600, color: 'var(--tx)' }}>
+              Acepto el tratamiento de datos personales conforme a la Ley 1581 de 2012 (Habeas Data).
+            </span>
+            <input 
+              type="checkbox" 
+              className="sw" 
+              checked={aceptaHabeasData} 
+              onChange={e => setAceptaHabeasData(e.target.checked)} 
+              style={{ cursor: 'pointer' }}
+            />
+          </div>
+          {errores.habeas && <p className="er" style={{ fontSize: '.75rem', marginTop: '6px', margin: 0 }}>{errores.habeas}</p>}
+        </div>
 
-        <button type="submit" className="bt ac w">Registrarme</button>
+        <button type="submit" className="bt ac w" style={{ height: '48px', fontSize: '.95rem' }}>
+          REGISTRARME
+        </button>
       </form>
-      <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '.9rem' }}>
+
+      <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '.88rem' }}>
         ¿Ya tienes cuenta? <button style={{ border: 0, background: 'none', color: 'var(--ac)', fontWeight: 800, cursor: 'pointer' }} onClick={irALogin}>Iniciar sesión</button>
       </p>
     </div>
