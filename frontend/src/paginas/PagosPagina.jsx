@@ -1,6 +1,5 @@
 import React from 'react';
-import ResumenCarrito from '../componentes/pagos/ResumenCarrito';
-
-export default function PagosPagina({ carrito, alVaciar, alProcesarPago }) {
-  return <ResumenCarrito carrito={carrito} alVaciar={alVaciar} alProcesarPago={alProcesarPago} />;
+import Pasarela from '../componentes/pagos/Pasarela';
+export default function PagosPagina({ carrito, alModificarCantidad, alQuitarItem, alVaciarCarrito }) {
+  return <Pasarela carrito={carrito} alModificarCantidad={alModificarCantidad} alQuitarItem={alQuitarItem} alVaciarCarrito={alVaciarCarrito} />;
 }
