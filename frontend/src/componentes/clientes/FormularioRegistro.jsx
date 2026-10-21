@@ -19,7 +19,7 @@ export default function FormularioRegistro() {
     const enviarRegistro = async (e) => {
         e.preventDefault();
         try {
-            const respuesta = await fetch('http://localhost:3000/api/clientes/registro', {
+            const respuesta = await fetch('https://gab-core-backend.onrender.com', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(form)
