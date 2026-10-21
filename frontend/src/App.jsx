@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 
 export default function App() {
   useEffect(() => {
-    // Código JavaScript del prototipo funcional completo
     var $=function(s){return document.querySelector(s)},$$=function(s){return document.querySelectorAll(s)};
     function I(n,c){return '<svg class="i '+(c||'')+'"><use href="#i-'+n+'"/></svg>'}
     var tm;function T(m){var t=$("#to");if(!t)return;t.textContent=m;t.classList.add("on");clearTimeout(tm);tm=setTimeout(function(){t.classList.remove("on")},2200)}
