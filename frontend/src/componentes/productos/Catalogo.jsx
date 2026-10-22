@@ -23,12 +23,16 @@ export default function Catalogo({ productos, alAgregar, terminoBusq }) {
           <p className="mu">No hay productos disponibles para esta búsqueda:</p>
         ) : (
           filtrados.map(p => (
-            <div key={p.id} className="pc">
+           <div key={p.id} className="pc">
               <div>
                 <span className="b ac" style={{ fontSize: '.7rem' }}>{p.categoria}</span>
                 {p.enOferta && <span className="b er" style={{ marginLeft: '6px', fontSize: '.7rem' }}>Oferta</span>}
                 <h3>{p.nombre}</h3>
                 <p style={{ fontSize: '.85rem', color: 'var(--mu)' }}>{p.resumen}</p>
+                
+                {/* Línea para la descripción completa */}
+                {p.descripcion && <p style={{ fontSize: '.8rem', color: 'var(--tx)', marginTop: '4px' }}>{p.descripcion}</p>}
+
                 <div className="pr">${p.precio.toLocaleString('es-CO')} COP</div>
               </div>
 
