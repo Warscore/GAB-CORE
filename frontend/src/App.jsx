@@ -3,7 +3,7 @@ import './App.css';
 import FormularioRegistro from './componentes/clientes/FormularioRegistro';
 import PanelAdmin from './componentes/admin/PanelAdmin';
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://gap-core-backend.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://gab-core-backend.onrender.com/api';
 
 export default function App() {
   const [temaOscuro, setTemaOscuro] = useState(false);
