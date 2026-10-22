@@ -111,7 +111,7 @@ export default function Pasarela({ carrito, vaciarCarrito, actualizarCantidad, e
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', width: '100%' }}>
-      {/* SECCIÓN 1: Resumen del Pedido con control de cantidades */}
+      {/* SECCIÓN 1: Resumen del Pedido con control de cantidades y subtotal corregido */}
       <div style={{
         backgroundColor: '#111a24',
         border: '1px solid #1f2937',
@@ -151,7 +151,7 @@ export default function Pasarela({ carrito, vaciarCarrito, actualizarCantidad, e
                       {item.nombre}
                     </h4>
                     <span style={{ fontSize: '13px', color: '#38bdf8', fontWeight: 'bold' }}>
-                      {formatearPrecio(item.precio * item.cantidad)}
+                      {formatearPrecio(item.precio * item.cantidad)} COP
                     </span>
                   </div>
 
@@ -220,7 +220,7 @@ export default function Pasarela({ carrito, vaciarCarrito, actualizarCantidad, e
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
               <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#9ca3af' }}>Total:</span>
               <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8' }}>
-                {formatearPrecio(calcularTotal())}
+                {formatearPrecio(calcularTotal())} COP
               </span>
             </div>
 
@@ -288,7 +288,6 @@ export default function Pasarela({ carrito, vaciarCarrito, actualizarCantidad, e
             </div>
           </div>
 
-          {/* Opciones de PSE (Lista ampliada de bancos) */}
           {medioPago === 'PSE' && (
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '6px' }}>Seleccionar Banco</label>
@@ -314,7 +313,6 @@ export default function Pasarela({ carrito, vaciarCarrito, actualizarCantidad, e
             </div>
           )}
 
-          {/* Datos de Tarjeta */}
           {medioPago === 'Tarjeta' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '-2px' }}>Datos de Tarjeta</label>
@@ -345,7 +343,6 @@ export default function Pasarela({ carrito, vaciarCarrito, actualizarCantidad, e
             </div>
           )}
 
-          {/* Datos de Billetera Digital */}
           {medioPago === 'Billetera' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '-2px' }}>Billetera Digital</label>
