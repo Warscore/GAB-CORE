@@ -63,7 +63,7 @@ export default function FormularioRegistro({ alRegistrar, irALogin }) {
 
     // Validar Ciudad
     if (!ciudad) {
-      err.ciudad = 'Sleccione una ciudad válida de la lista.';
+      err.ciudad = 'Seleccione una ciudad válida de la lista.';
     }
 
     // Validar Contraseña Segura
