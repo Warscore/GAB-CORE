@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { API_URL } from '../../config';
 
-export default function FormularioRegistro({ alRegistrar, irALogin }) {
+export default function FormularioRegistro({ irALogin }) {
   const [docTipo, setDocTipo] = useState('CC');
   const [docNum, setDocNum] = useState('');
   const [nombre, setNombre] = useState('');
@@ -12,6 +13,33 @@ export default function FormularioRegistro({ alRegistrar, irALogin }) {
   const [error, setError] = useState('');
 
   const ciudadesColombia = ['Soacha', 'Bogotá D.C.', 'Medellín', 'Cali', 'Barranquilla', 'Cartagena', 'Bucaramanga'];
+
+  const registrarCliente = async () => {
+    try {
+      const res = await fetch(`${API_URL}/clientes/registro`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo_documento: docTipo,
+          numero_documento: docNum,
+          nombre_razon_social: nombre,
+          correo: correo.toLowerCase(),
+          telefono,
+          ciudad,
+          contrasena: pass
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert('¡Registro guardado exitosamente en Supabase!');
+        irALogin();
+      } else {
+        alert(data.error || 'Error al registrar.');
+      }
+    } catch (err) {
+      alert('Error de conexión.');
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -34,15 +62,7 @@ export default function FormularioRegistro({ alRegistrar, irALogin }) {
       return;
     }
 
-    alRegistrar({
-      docTipo,
-      docNum,
-      nombre,
-      correo: correo.toLowerCase(),
-      telefono,
-      ciudad,
-      pass
-    });
+    registrarCliente();
   };
 
   return (
