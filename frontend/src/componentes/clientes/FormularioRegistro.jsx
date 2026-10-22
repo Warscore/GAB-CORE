@@ -13,7 +13,7 @@ export default function FormularioRegistro({ alRegistrar, irALogin }) {
 
   // Lista de ciudades principales de Colombia
   const ciudadesColombia = [
-    'Sacha', 'Bogotá D.C.', 'Medellín', 'Cali', 'Barranquilla', 
+    'Soacha', 'Bogotá D.C.', 'Medellín', 'Cali', 'Barranquilla', 
     'Cartagena', 'Bucaramanga', 'Pereira', 'Manizales', 'Cúcuta', 
     'Ibagué', 'Villavicencio', 'Santa Marta', 'Pastos', 'Montería'
   ];
@@ -63,7 +63,7 @@ export default function FormularioRegistro({ alRegistrar, irALogin }) {
 
     // Validar Ciudad
     if (!ciudad) {
-      err.ciudad = 'Seleccione una ciudad válida de la lista.';
+      err.ciudad = 'Sleccione una ciudad válida de la lista.';
     }
 
     // Validar Contraseña Segura
