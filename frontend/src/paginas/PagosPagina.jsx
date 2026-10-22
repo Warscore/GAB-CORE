@@ -2,16 +2,23 @@ import React from 'react';
 import ResumenCarrito from '../componentes/pagos/ResumenCarrito';
 import Pasarela from '../componentes/pagos/Pasarela';
 
-export default function PagosPagina({ usuario, carrito, alModificarCantidad, alQuitarItem, alVaciarCarrito }) {
+export default function PagosPagina({ carrito, vaciarCarrito, actualizarCantidad, eliminarDelCarrito, usuario, API_URL }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-      <ResumenCarrito
-        carrito={carrito}
-        alModificarCantidad={alModificarCantidad}
-        alQuitarItem={alQuitarItem}
-        alVaciarCarrito={alVaciarCarrito}
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', width: '100%' }}>
+      <ResumenCarrito 
+        carrito={carrito} 
+        vaciarCarrito={vaciarCarrito} 
+        actualizarCantidad={actualizarCantidad} 
+        eliminarDelCarrito={eliminarDelCarrito} 
       />
-      <Pasarela usuario={usuario} carrito={carrito} alPagoExitoso={alVaciarCarrito} />
+      <Pasarela 
+        carrito={carrito} 
+        usuario={usuario} 
+        API_URL={API_URL} 
+        alCompletarPago={() => {
+          vaciarCarrito();
+        }} 
+      />
     </div>
   );
 }
