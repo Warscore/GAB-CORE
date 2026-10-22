@@ -40,7 +40,6 @@ export default function ResumenCarrito({ carrito, vaciarCarrito, actualizarCanti
                   </span>
                 </div>
 
-                {/* Controles de cantidad */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <button
                     className="bt"
