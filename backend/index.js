@@ -1,12 +1,23 @@
 const express = require('express');
 const cors = require('cors');
-const pool = require('../base-de-datos/conexion');
+const { Pool } = require('pg');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Conexión directa al Pool de PostgreSQL (Supabase)
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+});
 
+// Endpoint de prueba de vida
+app.get('/', (req, res) => {
+  res.send('Servidor GAP Core activo y conectado a Supabase');
+});
+
+// REGISTRO DE CLIENTES
 app.post('/api/clientes/registro', async (req, res) => {
   const { tipo_documento, numero_documento, nombre_razon_social, correo, telefono, ciudad, contrasena } = req.body;
   try {
@@ -20,11 +31,11 @@ app.post('/api/clientes/registro', async (req, res) => {
     res.status(201).json(nuevo.rows[0]);
   } catch (err) {
     console.error('Error en registro:', err);
-    res.status(400).json({ error: 'El correo o número de documento ya se encuentra registrado en la base de datos.' });
+    res.status(400).json({ error: 'El correo o número de documento ya está registrado en Supabase.' });
   }
 });
 
-
+// INICIO DE SESIÓN
 app.post('/api/clientes/login', async (req, res) => {
   const { correo, contrasena } = req.body;
   try {
@@ -41,40 +52,37 @@ app.post('/api/clientes/login', async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     console.error('Error en login:', err);
-    res.status(500).json({ error: 'Error interno del servidor al iniciar sesión.' });
+    res.status(500).json({ error: 'Error interno en la base de datos.' });
   }
 });
 
-
+// LISTAR CLIENTES (PANEL ADMIN)
 app.get('/api/admin/clientes', async (req, res) => {
   try {
     const result = await pool.query(`SELECT id, tipo_documento, numero_documento, nombre_razon_social, correo, telefono, ciudad, fecha_registro FROM clientes WHERE rol = 'cliente' ORDER BY id DESC;`);
     res.json(result.rows);
   } catch (err) {
-    res.status(500).json({ error: 'Error al consultar los clientes.' });
+    res.status(500).json({ error: 'Error al consultar clientes.' });
   }
 });
 
-
-
+// CATÁLOGO DE PRODUCTOS
 app.get('/api/productos', async (req, res) => {
   try {
     const result = await pool.query(`SELECT * FROM productos ORDER BY id ASC;`);
     res.json(result.rows);
   } catch (err) {
-    res.status(500).json({ error: 'Error al obtener el catálogo de productos.' });
+    res.status(500).json({ error: 'Error al obtener productos.' });
   }
 });
 
-
-
+// PROCESAR COMPRA Y CREAR EQUIPOS
 app.post('/api/ordenes', async (req, res) => {
   const { cliente_id, total, medio_pago, items } = req.body;
   const client = await pool.connect();
   
   try {
     await client.query('BEGIN');
-
 
     const ordenQuery = `
       INSERT INTO ordenes (cliente_id, total, estado_pago, medio_pago)
@@ -83,7 +91,6 @@ app.post('/api/ordenes', async (req, res) => {
     `;
     const ordenRes = await client.query(ordenQuery, [cliente_id, total, medio_pago]);
     const nuevaOrden = ordenRes.rows[0];
-
 
     for (const item of items) {
       const serialUnico = 'SN-' + Math.floor(100000 + Math.random() * 900000);
@@ -98,14 +105,14 @@ app.post('/api/ordenes', async (req, res) => {
     res.status(201).json(nuevaOrden);
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('Error procesando orden en BD:', err);
-    res.status(500).json({ error: 'Error al procesar la orden en la base de datos.' });
+    console.error('Error procesando orden:', err);
+    res.status(500).json({ error: 'Error procesando compra.' });
   } finally {
     client.release();
   }
 });
 
-
+// HISTORIAL GLOBAL DE VENTAS (ADMIN)
 app.get('/api/admin/ordenes', async (req, res) => {
   try {
     const query = `
@@ -117,12 +124,11 @@ app.get('/api/admin/ordenes', async (req, res) => {
     const result = await pool.query(query);
     res.json(result.rows);
   } catch (err) {
-    res.status(500).json({ error: 'Error al obtener el historial de ventas.' });
+    res.status(500).json({ error: 'Error consultando ventas.' });
   }
 });
 
-
-
+// CREAR TICKET DE SOPORTE
 app.post('/api/tickets', async (req, res) => {
   const { cliente_id, asunto, categoria, prioridad, descripcion } = req.body;
   try {
@@ -134,10 +140,11 @@ app.post('/api/tickets', async (req, res) => {
     const result = await pool.query(query, [cliente_id, asunto, categoria, prioridad, descripcion]);
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: 'Error al registrar el ticket de soporte.' });
+    res.status(500).json({ error: 'Error registrando ticket.' });
   }
 });
 
+// OBTENER TICKETS
 app.get('/api/tickets', async (req, res) => {
   const { cliente_id, esAdmin } = req.query;
   try {
@@ -147,30 +154,28 @@ app.get('/api/tickets', async (req, res) => {
       JOIN clientes c ON t.cliente_id = c.id 
     `;
     if (esAdmin !== 'true') {
-      query += ` WHERE t.cliente_id = $1 `;
-      const result = await pool.query(query + ` ORDER BY t.id DESC;`, [parseInt(cliente_id)]);
+      const result = await pool.query(query + ` WHERE t.cliente_id = $1 ORDER BY t.id DESC;`, [parseInt(cliente_id)]);
       return res.json(result.rows);
     }
-    query += ` ORDER BY t.id DESC;`;
-    const result = await pool.query(query);
+    const result = await pool.query(query + ` ORDER BY t.id DESC;`);
     res.json(result.rows);
   } catch (err) {
-    res.status(500).json({ error: 'Error al consultar los tickets.' });
+    res.status(500).json({ error: 'Error al obtener tickets.' });
   }
 });
 
+// RESOLVER TICKET (ADMIN)
 app.put('/api/tickets/:id/resolver', async (req, res) => {
   const { id } = req.params;
   try {
     await pool.query(`UPDATE tickets_soporte SET estado = 'Resuelto' WHERE id = $1;`, [id]);
-    res.json({ mensaje: 'Ticket marcado como resuelto.' });
+    res.json({ mensaje: 'Ticket resuelto.' });
   } catch (err) {
-    res.status(500).json({ error: 'Error al actualizar el ticket.' });
+    res.status(500).json({ error: 'Error actualizando ticket.' });
   }
 });
 
-
-
+// OBTENER EQUIPOS
 app.get('/api/equipos', async (req, res) => {
   const { cliente_id, esAdmin } = req.query;
   try {
@@ -186,9 +191,9 @@ app.get('/api/equipos', async (req, res) => {
     const result = await pool.query(query + ` ORDER BY e.id DESC;`);
     res.json(result.rows);
   } catch (err) {
-    res.status(500).json({ error: 'Error al consultar los equipos.' });
+    res.status(500).json({ error: 'Error al consultar equipos.' });
   }
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Servidor GAP Core ejecutándose en puerto ${PORT}`));
+app.listen(PORT, () => console.log(`Servidor activo en puerto ${PORT}`));
