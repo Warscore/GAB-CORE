@@ -20,7 +20,7 @@ export default function Catalogo({ productos, alAgregar, terminoBusq }) {
 
       <div className="gd">
         {filtrados.length === 0 ? (
-          <p className="mu">No hay productos disponibles para esta búsqueda.</p>
+          <p className="mu">No hay productos disponibles para esta búsqueda:</p>
         ) : (
           filtrados.map(p => (
             <div key={p.id} className="pc">
