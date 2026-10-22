@@ -99,7 +99,7 @@ export default function FormularioRegistro({ alRegistrar, irALogin }) {
 
   return (
     <div>
-      <h2 className="t" style={{ textAlign: 'center', marginBottom: '20px' }}>REGISTRO DE CLIENTE - GAP CORE</h2>
+      <h2 className="t" style={{ textAlign: 'center', marginBottom: '20px' }}>REGISTRO DE CLIENT - GAP CORE</h2>
       
       <form onSubmit={handleSubmit}>
         <span className="l">TIPO DE DOCUMENTO</span>
