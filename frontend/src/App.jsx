@@ -31,21 +31,46 @@ export default function App() {
   const [prioridad, setPrioridad] = useState('Media');
   const [descripcion, setDescripcion] = useState('');
 
-  // Pasarela de Pagos
+  // Pasarela de Pagos Dinámica
   const [medioPago, setMedioPago] = useState('PSE');
-  const [banco, setBanco] = useState('');
+  const [bancoSeleccionado, setBancoSeleccionado] = useState('');
+  const [datosTarjeta, setDatosTarjeta] = useState({ numero: '', fecha: '', cvc: '' });
+  const [billeteraTipo, setBilleteraTipo] = useState('Nequi');
+  const [telefonoBilletera, setTelefonoBilletera] = useState('');
   const [estadoTransaccion, setEstadoTransaccion] = useState('Pendiente');
-  const actualizarCantidad = (id, nuevaCantidad) => {
-  if (nuevaCantidad <= 0) {
-    eliminarDelCarrito(id);
-    return;
-  }
-  setCarrito(prev => prev.map(item => item.id === id ? { ...item, cantidad: nuevaCantidad } : item));
-};
 
-const eliminarDelCarrito = (id) => {
-  setCarrito(prev => prev.filter(item => item.id !== id));
-};
+  // Bancos PSE ampliados para Colombia
+  const bancosPSE = [
+    'Bancolombia',
+    'Banco de Bogotá',
+    'Davivienda',
+    'BBVA Colombia',
+    'Banco de Occidente',
+    'Banco Popular',
+    'Banco AV Villas',
+    'Scotiabank Colpatria',
+    'Banco Caja Social',
+    'Banco Falabella',
+    'Nequi (PSE)',
+    'Daviplata (PSE)',
+    'Lulo Bank',
+    'Nu Colombia',
+    'RappiPay',
+    'Banco Agrario de Colombia',
+    'Banco Pichincha'
+  ];
+
+  const actualizarCantidad = (id, nuevaCantidad) => {
+    if (nuevaCantidad <= 0) {
+      eliminarDelCarrito(id);
+      return;
+    }
+    setCarrito(prev => prev.map(item => item.id === id ? { ...item, cantidad: nuevaCantidad } : item));
+  };
+
+  const eliminarDelCarrito = (id) => {
+    setCarrito(prev => prev.filter(item => item.id !== id));
+  };
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', temaOscuro ? 'dark' : 'light');
@@ -137,13 +162,33 @@ const eliminarDelCarrito = (id) => {
 
   const procesarPago = async () => {
     if (carrito.length === 0) return;
+
+    if (medioPago === 'PSE' && !bancoSeleccionado) {
+      alert('Por favor selecciona un banco para continuar con PSE.');
+      return;
+    }
+    if (medioPago === 'Tarjeta' && (!datosTarjeta.numero || !datosTarjeta.fecha || !datosTarjeta.cvc)) {
+      alert('Por favor completa todos los datos de la tarjeta.');
+      return;
+    }
+    if (medioPago === 'Billetera' && !telefonoBilletera) {
+      alert('Por favor ingresa el número de celular asociado a la billetera digital.');
+      return;
+    }
+
     const total = carrito.reduce((s, i) => s + (i.precio * i.cantidad), 0);
     setEstadoTransaccion('Conectando con la entidad financiera...');
+
+    let descripcionMedio = medioPago;
+    if (medioPago === 'PSE') descripcionMedio = `PSE (${bancoSeleccionado})`;
+    if (medioPago === 'Tarjeta') descripcionMedio = 'Tarjeta de Crédito/Débito';
+    if (medioPago === 'Billetera') descripcionMedio = `Billetera ${billeteraTipo} (${telefonoBilletera})`;
+
     try {
       const res = await fetch(`${API_URL}/ordenes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cliente_id: usuario.id, total, medio_pago: medioPago, items: carrito })
+        body: JSON.stringify({ cliente_id: usuario.id, total, medio_pago: descripcionMedio, items: carrito })
       });
       if (res.ok) {
         setEstadoTransaccion('Aprobado. Guardado en Supabase.');
@@ -283,21 +328,29 @@ const eliminarDelCarrito = (id) => {
 
         {usuario.rol === 'cliente' && paginaActiva === 'pagos' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            {/* Resumen del pedido con botones + / - y eliminar */}
             <div className="cd">
               <h2 className="t">Resumen del Pedido</h2>
               {carrito.length === 0 ? <p className="mu">El carrito está vacío.</p> : carrito.map(i => (
-                <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--bd)' }}>
+                <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--bd)' }}>
                   <div>
                     <strong>{i.nombre}</strong>
-                    <div className="mu">Cantidad: {i.cantidad}</div>
+                    <div className="mu">${Number(i.precio).toLocaleString('es-CO')} c/u</div>
                   </div>
-                  <strong>${(i.precio * i.cantidad).toLocaleString('es-CO')}</strong>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button className="bt" style={{ padding: '2px 8px', height: '28px' }} onClick={() => actualizarCantidad(i.id, i.cantidad - 1)}>-</button>
+                    <span style={{ fontWeight: 'bold' }}>{i.cantidad}</span>
+                    <button className="bt" style={{ padding: '2px 8px', height: '28px' }} onClick={() => actualizarCantidad(i.id, i.cantidad + 1)}>+</button>
+                    <button className="bt er" style={{ padding: '2px 8px', height: '28px', fontSize: '.8rem' }} onClick={() => eliminarDelCarrito(i.id)}>✕</button>
+                  </div>
                 </div>
               ))}
               {carrito.length > 0 && (
                 <button className="bt er w" style={{ marginTop: '16px' }} onClick={() => setCarrito([])}>Vaciar Carrito</button>
               )}
             </div>
+
+            {/* Pasarela de pagos interactiva con campos dinámicos */}
             <div className="cd">
               <h2 className="t">Pasarela de Pagos</h2>
               <label className="l">Medio de Pago</label>
@@ -306,14 +359,42 @@ const eliminarDelCarrito = (id) => {
                   <button key={m} className={medioPago === m ? 'on' : ''} onClick={() => setMedioPago(m)}>{m}</button>
                 ))}
               </div>
+
               {medioPago === 'PSE' && (
-                <select className="f" value={banco} onChange={e => setBanco(e.target.value)}>
-                  <option value="">-- Seleccionar Banco --</option>
-                  <option value="Bancolombia">Bancolombia</option>
-                  <option value="Davivienda">Davivienda</option>
-                </select>
+                <div style={{ marginTop: '12px' }}>
+                  <label className="l">Seleccionar Banco</label>
+                  <select className="f" value={bancoSeleccionado} onChange={e => setBancoSeleccionado(e.target.value)}>
+                    <option value="">-- Seleccionar Banco --</option>
+                    {bancosPSE.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                </div>
               )}
-              <button className="bt ac w" onClick={procesarPago} disabled={carrito.length === 0}>Pagar Ahora</button>
+
+              {medioPago === 'Tarjeta' && (
+                <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label className="l">Datos de Tarjeta</label>
+                  <input className="f" type="text" placeholder="Número de Tarjeta" value={datosTarjeta.numero} onChange={e => setDatosTarjeta({ ...datosTarjeta, numero: e.target.value })} />
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input className="f" type="text" placeholder="MM/AA" value={datosTarjeta.fecha} onChange={e => setDatosTarjeta({ ...datosTarjeta, fecha: e.target.value })} />
+                    <input className="f" type="password" placeholder="CVC" maxLength="4" value={datosTarjeta.cvc} onChange={e => setDatosTarjeta({ ...datosTarjeta, cvc: e.target.value })} />
+                  </div>
+                </div>
+              )}
+
+              {medioPago === 'Billetera' && (
+                <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label className="l">Billetera Digital</label>
+                  <select className="f" value={billeteraTipo} onChange={e => setBilleteraTipo(e.target.value)}>
+                    <option value="Nequi">Nequi</option>
+                    <option value="Daviplata">Daviplata</option>
+                    <option value="Dale!">Dale!</option>
+                    <option value="Movii">Movii</option>
+                  </select>
+                  <input className="f" type="tel" placeholder="Número de Celular" value={telefonoBilletera} onChange={e => setTelefonoBilletera(e.target.value)} />
+                </div>
+              )}
+
+              <button className="bt ac w" style={{ marginTop: '16px' }} onClick={procesarPago} disabled={carrito.length === 0}>Pagar Ahora</button>
               <div style={{ marginTop: '16px', textAlign: 'center', fontWeight: 800 }}>{estadoTransaccion}</div>
             </div>
           </div>
