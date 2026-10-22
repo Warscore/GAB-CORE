@@ -1,7 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { API_URL } from '../../config';
+import MesaAyuda from '../ayuda/MesaAyuda';
+import ControlEquipos from '../equipos/ControlEquipos';
 
-export default function PanelAdmin({ clientes, ventasGlobales, tickets, alResolverTicket, equiposGlobales }) {
+export default function PanelAdmin({ usuario }) {
   const [subTab, setSubTab] = useState('clientes');
+  const [clientes, setClientes] = useState([]);
+  const [ventasGlobales, setVentasGlobales] = useState([]);
+  const [tickets, setTickets] = useState([]);
+  const [equiposGlobales, setEquiposGlobales] = useState([]);
+
+  const traer = async (ruta, guardar) => {
+    const res = await fetch(`${API_URL}${ruta}`);
+    const data = await res.json();
+    if (Array.isArray(data)) guardar(data);
+  };
+
+  const cargarDatos = async () => {
+    try {
+      await Promise.all([
+        traer('/admin/clientes', setClientes),
+        traer('/admin/ordenes', setVentasGlobales),
+        traer(`/tickets?cliente_id=${usuario.id}&esAdmin=true`, setTickets),
+        traer(`/equipos?cliente_id=${usuario.id}&esAdmin=true`, setEquiposGlobales)
+      ]);
+    } catch (err) {
+      console.error('Error cargando datos de administración:', err);
+    }
+  };
+
+  useEffect(() => { cargarDatos(); }, []);
+
+  const resolverTicket = async (id) => {
+    await fetch(`${API_URL}/tickets/${id}/resolver`, { method: 'PUT' });
+    cargarDatos();
+  };
 
   return (
     <div className="cd">
@@ -64,47 +97,9 @@ export default function PanelAdmin({ clientes, ventasGlobales, tickets, alResolv
         </div>
       )}
 
-      {subTab === 'tickets' && (
-        <div>
-          {tickets.map(t => (
-            <div key={t.id} style={{ padding: '12px', background: 'var(--bg)', borderRadius: '10px', marginBottom: '10px', border: '1px solid var(--bd)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800 }}>
-                <span>#{t.id} - {t.asunto} ({t.cliente})</span>
-                <span className={`b ${t.estado === 'Resuelto' ? 'ok' : 'ac'}`}>{t.estado}</span>
-              </div>
-              <p style={{ margin: '6px 0', fontSize: '.9rem' }}>{t.descripcion}</p>
-              {t.estado !== 'Resuelto' && (
-                <button className="bt ac" style={{ height: '26px', fontSize: '.7rem' }} onClick={() => alResolverTicket(t.id)}>Marcar Resuelto</button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+      {subTab === 'tickets' && <MesaAyuda tickets={tickets} esAdmin={true} alResolver={resolverTicket} />}
 
-      {subTab === 'equipos' && (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.9rem' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid var(--bd)', textAlign: 'left' }}>
-                <th style={{ padding: '10px' }}>Serial</th>
-                <th style={{ padding: '10px' }}>Equipo</th>
-                <th style={{ padding: '10px' }}>Propietario</th>
-                <th style={{ padding: '10px' }}>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {equiposGlobales.map(e => (
-                <tr key={e.id} style={{ borderBottom: '1px solid var(--bd)' }}>
-                  <td style={{ padding: '10px', fontWeight: 800 }}>{e.serial}</td>
-                  <td style={{ padding: '10px' }}>{e.nombre_equipo}</td>
-                  <td style={{ padding: '10px' }}>{e.cliente_correo}</td>
-                  <td style={{ padding: '10px' }}><span className="b ok">{e.estado}</span></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {subTab === 'equipos' && <ControlEquipos equipos={equiposGlobales} esAdmin={true} />}
     </div>
   );
 }
