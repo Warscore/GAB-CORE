@@ -35,6 +35,17 @@ export default function App() {
   const [medioPago, setMedioPago] = useState('PSE');
   const [banco, setBanco] = useState('');
   const [estadoTransaccion, setEstadoTransaccion] = useState('Pendiente');
+  const actualizarCantidad = (id, nuevaCantidad) => {
+  if (nuevaCantidad <= 0) {
+    eliminarDelCarrito(id);
+    return;
+  }
+  setCarrito(prev => prev.map(item => item.id === id ? { ...item, cantidad: nuevaCantidad } : item));
+};
+
+const eliminarDelCarrito = (id) => {
+  setCarrito(prev => prev.filter(item => item.id !== id));
+};
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', temaOscuro ? 'dark' : 'light');
