@@ -7,6 +7,8 @@ import AyudaPagina from './paginas/AyudaPagina';
 import EquiposPagina from './paginas/EquiposPagina';
 import PanelAdmin from './componentes/admin/PanelAdmin';
 
+const API_URL = import.meta.env.VITE_API_URL || 'https://gab-core-backend.onrender.com/api';
+
 // App solo coordina: sesión, tema, carrito y qué apartado se muestra.
 // Cada apartado carga y maneja sus propios datos.
 export default function App() {
