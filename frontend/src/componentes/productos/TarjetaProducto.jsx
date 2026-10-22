@@ -10,6 +10,14 @@ export default function TarjetaProducto({ producto, alAgregar }) {
         {producto.enOferta && <span className="b er" style={{ marginLeft: '6px', fontSize: '.68rem' }}>Oferta</span>}
         <h3>{producto.nombre}</h3>
         <p style={{ fontSize: '.82rem', color: 'var(--mu)' }}>{producto.resumen}</p>
+        {producto.descripcion && <p style={{ fontSize: '.78rem', color: 'var(--tx)', marginTop: '4px' }}>{producto.descripcion}</p>}
+        {producto.specs && (
+          <ul style={{ listStyle: 'none', margin: '8px 0 0', padding: 0, fontSize: '.76rem', display: 'grid', gap: '4px' }}>
+            {['procesador', 'ram', 'disco', 'pantalla'].filter(k => producto.specs[k]).map(k => (
+              <li key={k}><b style={{ color: 'var(--mu)', textTransform: 'uppercase', fontSize: '.68rem' }}>{ETIQUETAS[k]}: </b>{producto.specs[k]}</li>
+            ))}
+          </ul>
+        )}
         <div className="pr">${producto.precio.toLocaleString('es-CO')} COP</div>
       </div>
       <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -21,12 +29,30 @@ export default function TarjetaProducto({ producto, alAgregar }) {
         </button>
       </div>
 
-      {verDetalle && (
+           {verDetalle && (
         <div style={{ marginTop: '10px', padding: '10px', background: 'var(--bg)', borderRadius: '8px', fontSize: '.78rem' }}>
-          <strong>Especificaciones:</strong>
-          <p style={{ margin: '4px 0' }}>{producto.especificaciones}</p>
+          <strong>Ficha técnica:</strong>
+          {producto.specs ? (
+            <ul style={{ listStyle: 'none', margin: '6px 0 0', padding: 0, display: 'grid', gap: '4px' }}>
+              {Object.entries(producto.specs).map(([clave, valor]) => (
+                <li key={clave}><b>{ETIQUETAS[clave] || clave}:</b> {valor}</li>
+              ))}
+            </ul>
+          ) : (
+            <p style={{ margin: '4px 0' }}>{producto.especificaciones || 'Especificaciones disponibles bajo consulta.'}</p>
+          )}
         </div>
       )}
     </div>
   );
 }
+const ETIQUETAS = {
+  procesador: 'Procesador',
+  ram: 'RAM',
+  disco: 'Disco',
+  pantalla: 'Pantalla',
+  graficos: 'Gráficos',
+  conectividad: 'Conectividad',
+  sistema: 'Sistema operativo',
+  uso: 'Uso recomendado'
+};
