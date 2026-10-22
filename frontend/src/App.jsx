@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import FormularioRegistro from './componentes/clientes/FormularioRegistro';
+import PanelAdmin from './componentes/admin/PanelAdmin';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://gap-core-backend.onrender.com/api';
 
@@ -12,37 +14,27 @@ export default function App() {
   const [loginPass, setLoginPass] = useState('');
   const [errorAuth, setErrorAuth] = useState('');
 
-  // Registro Estricto Colombia
-  const [regTipoDoc, setRegTipoDoc] = useState('CC');
-  const [regNumDoc, setRegNumDoc] = useState('');
-  const [regNombre, setRegNombre] = useState('');
-  const [regCorreo, setRegCorreo] = useState('');
-  const [regTel, setRegTel] = useState('');
-  const [regCiudad, setRegCiudad] = useState('Soacha');
-  const [regPass, setRegPass] = useState('');
-  const [habeasData, setHabeasData] = useState(false);
-
   const [paginaActiva, setPaginaActiva] = useState('productos');
   const [busqueda, setBusqueda] = useState('');
   const [carrito, setCarrito] = useState([]);
 
-  // Datos Supabase
+  // Datos de Supabase
   const [productos, setProductos] = useState([]);
   const [clientesAdmin, setClientesAdmin] = useState([]);
   const [ventasAdmin, setVentasAdmin] = useState([]);
   const [tickets, setTickets] = useState([]);
   const [equipos, setEquipos] = useState([]);
 
-  // Formulario Ayuda
-  const [asuntoTicket, setAsuntoTicket] = useState('');
-  const [catTicket, setCatTicket] = useState('Hardware');
-  const [prioTicket, setPrioTicket] = useState('Media');
-  const [descTicket, setDescTicket] = useState('');
+  // Formulario de Ayuda
+  const [asunto, setAsunto] = useState('');
+  const [categoria, setCategoria] = useState('Hardware');
+  const [prioridad, setPrioridad] = useState('Media');
+  const [descripcion, setDescripcion] = useState('');
 
-  // Pasarela
+  // Pasarela de Pagos
   const [medioPago, setMedioPago] = useState('PSE');
-  const [bancoPse, setBancoPse] = useState('');
-  const [estadoPago, setEstadoPago] = useState('Pendiente');
+  const [banco, setBanco] = useState('');
+  const [estadoTransaccion, setEstadoTransaccion] = useState('Pendiente');
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', temaOscuro ? 'dark' : 'light');
@@ -56,10 +48,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (usuario) cargarDatosBackend();
+    if (usuario) cargarDatos();
   }, [usuario]);
 
-  const cargarDatosBackend = async () => {
+  const cargarDatos = async () => {
     try {
       const esAdmin = usuario.rol === 'admin';
       const resT = await fetch(`${API_URL}/tickets?cliente_id=${usuario.id}&esAdmin=${esAdmin}`);
@@ -80,7 +72,7 @@ export default function App() {
         if (Array.isArray(dataV)) setVentasAdmin(dataV);
       }
     } catch (err) {
-      console.error('Error sincronizando datos:', err);
+      console.error('Error cargando datos de Supabase:', err);
     }
   };
 
@@ -105,46 +97,37 @@ export default function App() {
     }
   };
 
-  const manejarRegistro = async (e) => {
-    e.preventDefault();
-    if (!habeasData) {
-      alert('Debe aceptar la política de protección de datos (Ley 1581 de 2012).');
-      return;
-    }
-    if (!regCorreo.endsWith('@gmail.com')) {
-      alert('El correo electrónico debe terminar obligatoriamente en @gmail.com');
-      return;
-    }
+  const registrarCliente = async (nuevo) => {
     try {
       const res = await fetch(`${API_URL}/clientes/registro`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tipo_documento: regTipoDoc,
-          numero_documento: regNumDoc,
-          nombre_razon_social: regNombre,
-          correo: regCorreo,
-          telefono: regTel,
-          ciudad: regCiudad,
-          contrasena: regPass
+          tipo_documento: nuevo.docTipo,
+          numero_documento: nuevo.docNum,
+          nombre_razon_social: nuevo.nombre,
+          correo: nuevo.correo,
+          telefono: nuevo.telefono,
+          ciudad: nuevo.ciudad,
+          contrasena: nuevo.pass
         })
       });
       const data = await res.json();
       if (res.ok) {
-        alert('¡Registro guardado en Supabase con éxito! Ya puedes iniciar sesión.');
+        alert('¡Registro guardado exitosamente en Supabase!');
         setVistaAuth('login');
       } else {
         alert(data.error || 'Error al registrar.');
       }
     } catch (err) {
-      alert('Error de conexión con el backend.');
+      alert('Error de conexión.');
     }
   };
 
-  const procesarCompra = async () => {
+  const procesarPago = async () => {
     if (carrito.length === 0) return;
     const total = carrito.reduce((s, i) => s + (i.precio * i.cantidad), 0);
-    setEstadoPago('Procesando transacción...');
+    setEstadoTransaccion('Conectando con la entidad financiera...');
     try {
       const res = await fetch(`${API_URL}/ordenes`, {
         method: 'POST',
@@ -152,14 +135,14 @@ export default function App() {
         body: JSON.stringify({ cliente_id: usuario.id, total, medio_pago: medioPago, items: carrito })
       });
       if (res.ok) {
-        setEstadoPago('¡Aprobado y guardado en Supabase!');
+        setEstadoTransaccion('Aprobado. Guardado en Supabase.');
         setCarrito([]);
-        cargarDatosBackend();
+        cargarDatos();
       } else {
-        setEstadoPago('Error en la pasarela.');
+        setEstadoTransaccion('Error en la transacción.');
       }
     } catch (err) {
-      setEstadoPago('Error de red.');
+      setEstadoTransaccion('Error de red.');
     }
   };
 
@@ -169,26 +152,22 @@ export default function App() {
       const res = await fetch(`${API_URL}/tickets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cliente_id: usuario.id, asunto: asuntoTicket, categoria: catTicket, prioridad: prioTicket, descripcion: descTicket })
+        body: JSON.stringify({ cliente_id: usuario.id, asunto, categoria, prioridad, descripcion })
       });
       if (res.ok) {
-        setAsuntoTicket('');
-        setDescTicket('');
-        cargarDatosBackend();
-        alert('Ticket enviado con éxito.');
+        setAsunto('');
+        setDescripcion('');
+        cargarDatos();
+        alert('Ticket creado con éxito.');
       }
     } catch (err) {
-      alert('Error al enviar ticket.');
+      alert('Error al crear ticket.');
     }
   };
 
   const resolverTicket = async (id) => {
-    try {
-      await fetch(`${API_URL}/tickets/${id}/resolver`, { method: 'PUT' });
-      cargarDatosBackend();
-    } catch (err) {
-      alert('Error al resolver ticket.');
-    }
+    await fetch(`${API_URL}/tickets/${id}/resolver`, { method: 'PUT' });
+    cargarDatos();
   };
 
   if (!usuario) {
@@ -201,7 +180,7 @@ export default function App() {
         </div>
 
         <div className="cd" style={{ maxWidth: '480px', width: '100%', padding: '30px' }}>
-          <h1 className="logo" style={{ textAlign: 'center', color: 'var(--ac)', fontSize: '2.2rem' }}><b>G</b>AP<small>.core</small></h1>
+          <h1 className="logo" style={{ textAlign: 'center', color: 'var(--ac)', fontSize: '2.5rem' }}><b>G</b>AP<small>.core</small></h1>
           
           <div className="seg" style={{ justifyContent: 'center', margin: '20px 0' }}>
             <button className={vistaAuth === 'login' ? 'on' : ''} onClick={() => setVistaAuth('login')}>Iniciar Sesión</button>
@@ -216,47 +195,10 @@ export default function App() {
               <label className="l">Contraseña</label>
               <input className="f" type="password" value={loginPass} onChange={e => setLoginPass(e.target.value)} placeholder="Contraseña" required />
               <button type="submit" className="bt ac w">Ingresar</button>
-              <small className="mu" style={{ display: 'block', textAlign: 'center', marginTop: '12px' }}>Admin: admin@gapcore.com / Admin123</small>
+              <small className="mu" style={{ display: 'block', textAlign: 'center', marginTop: '12px' }}>Admin por defecto: admin@gapcore.com / Admin123</small>
             </form>
           ) : (
-            <form onSubmit={manejarRegistro}>
-              <span className="l">Tipo Documento</span>
-              <div className="seg">
-                {['CC', 'NIT', 'CE'].map(t => (
-                  <button key={t} type="button" className={regTipoDoc === t ? 'on' : ''} onClick={() => setRegTipoDoc(t)}>{t}</button>
-                ))}
-              </div>
-              <label className="l">N° Documento</label>
-              <input className="f" value={regNumDoc} onChange={e => setRegNumDoc(e.target.value.replace(/\D/g, ''))} placeholder="Solo números" required />
-              <label className="l">Nombre / Razón Social</label>
-              <input className="f" value={regNombre} onChange={e => setRegNombre(e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''))} placeholder="Solo letras" required />
-              <label className="l">Correo (@gmail.com)</label>
-              <input className="f" type="email" value={regCorreo} onChange={e => setRegCorreo(e.target.value)} placeholder="correo@gmail.com" required />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <div>
-                  <label className="l">Teléfono (3...)</label>
-                  <input className="f" value={regTel} onChange={e => setRegTel(e.target.value.replace(/\D/g, ''))} placeholder="3001234567" maxLength="10" required />
-                </div>
-                <div>
-                  <label className="l">Ciudad</label>
-                  <select className="f" value={regCiudad} onChange={e => setRegCiudad(e.target.value)}>
-                    <option value="Soacha">Soacha</option>
-                    <option value="Bogotá D.C.">Bogotá D.C.</option>
-                    <option value="Medellín">Medellín</option>
-                    <option value="Cali">Cali</option>
-                  </select>
-                </div>
-              </div>
-              <label className="l">Contraseña Segura</label>
-              <input className="f" type="password" value={regPass} onChange={e => setRegPass(e.target.value)} placeholder="Min. 8, Mayús, Núm, Símbolo" required />
-              <div style={{ padding: '10px', background: 'var(--bg)', borderRadius: '10px', margin: '10px 0', fontSize: '.75rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={habeasData} onChange={e => setHabeasData(e.target.checked)} />
-                  Acepto el tratamiento de datos (Ley 1581 de 2012).
-                </label>
-              </div>
-              <button type="submit" className="bt ac w">Registrarse en Supabase</button>
-            </form>
+            <FormularioRegistro alRegistrar={registrarCliente} irALogin={() => setVistaAuth('login')} />
           )}
         </div>
       </div>
@@ -277,14 +219,14 @@ export default function App() {
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '.85rem', fontWeight: 800 }}>{usuario.rol === 'admin' ? '👑 Admin' : '👤 ' + usuario.nombre_razon_social}</span>
-          <button className="bt er" style={{ height: '32px', fontSize: '.7rem', padding: '0 12px' }} onClick={() => setUsuario(null)}>Salir</button>
+          <button className="bt er" style={{ height: '32px', fontSize: '.7rem', padding: '0 12px' }} onClick={() => setUsuario(null)}>Cerrar Sesión</button>
         </div>
       </header>
 
       <main>
         <nav className="nav-bar">
           {usuario.rol === 'admin' ? (
-            <button className="on">👑 Panel de Administración General (Supabase)</button>
+            <button className="on">👑 Módulo de Administración (Supabase)</button>
           ) : (
             <>
               <button className={paginaActiva === 'productos' ? 'on' : ''} onClick={() => setPaginaActiva('productos')}>Catálogo</button>
@@ -296,67 +238,13 @@ export default function App() {
         </nav>
 
         {usuario.rol === 'admin' && (
-          <div className="cd">
-            <h2 className="t">Panel de Control de Administrador</h2>
-            
-            <h3 style={{ marginTop: '20px' }}>Clientes Registrados</h3>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.85rem', marginBottom: '20px' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid var(--bd)', textAlign: 'left' }}>
-                  <th style={{ padding: '8px' }}>Doc</th>
-                  <th style={{ padding: '8px' }}>Nombre</th>
-                  <th style={{ padding: '8px' }}>Correo</th>
-                  <th style={{ padding: '8px' }}>Ciudad</th>
-                </tr>
-              </thead>
-              <tbody>
-                {clientesAdmin.map(c => (
-                  <tr key={c.id} style={{ borderBottom: '1px solid var(--bd)' }}>
-                    <td style={{ padding: '8px' }}>{c.tipo_documento} {c.numero_documento}</td>
-                    <td style={{ padding: '8px' }}>{c.nombre_razon_social}</td>
-                    <td style={{ padding: '8px' }}>{c.correo}</td>
-                    <td style={{ padding: '8px' }}>{c.ciudad}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <h3>Historial Global de Ventas</h3>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.85rem', marginBottom: '20px' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid var(--bd)', textAlign: 'left' }}>
-                  <th style={{ padding: '8px' }}>Orden</th>
-                  <th style={{ padding: '8px' }}>Cliente</th>
-                  <th style={{ padding: '8px' }}>Total</th>
-                  <th style={{ padding: '8px' }}>Pago</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ventasAdmin.map(v => (
-                  <tr key={v.id} style={{ borderBottom: '1px solid var(--bd)' }}>
-                    <td style={{ padding: '8px', fontWeight: 800 }}>#{v.id}</td>
-                    <td style={{ padding: '8px' }}>{v.nombre_razon_social} ({v.correo})</td>
-                    <td style={{ padding: '8px', color: 'var(--ac)' }}>${Number(v.total).toLocaleString('es-CO')}</td>
-                    <td style={{ padding: '8px' }}>{v.medio_pago}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <h3>Tickets de Soporte Registrados</h3>
-            {tickets.map(t => (
-              <div key={t.id} style={{ padding: '12px', background: 'var(--bg)', borderRadius: '10px', marginBottom: '10px', border: '1px solid var(--bd)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800 }}>
-                  <span>#{t.id} - {t.asunto} ({t.cliente})</span>
-                  <span className={`b ${t.estado === 'Resuelto' ? 'ok' : 'ac'}`}>{t.estado}</span>
-                </div>
-                <p style={{ margin: '6px 0', fontSize: '.9rem' }}>{t.descripcion}</p>
-                {t.estado !== 'Resuelto' && (
-                  <button className="bt ac" style={{ height: '26px', fontSize: '.7rem' }} onClick={() => resolverTicket(t.id)}>Resolver</button>
-                )}
-              </div>
-            ))}
-          </div>
+          <PanelAdmin 
+            clientes={clientesAdmin} 
+            ventasGlobales={ventasAdmin} 
+            tickets={tickets} 
+            alResolverTicket={resolverTicket}
+            equiposGlobales={equipos}
+          />
         )}
 
         {usuario.rol === 'cliente' && paginaActiva === 'productos' && (
@@ -385,13 +273,19 @@ export default function App() {
         {usuario.rol === 'cliente' && paginaActiva === 'pagos' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
             <div className="cd">
-              <h2 className="t">Carrito de Compras</h2>
+              <h2 className="t">Resumen del Pedido</h2>
               {carrito.length === 0 ? <p className="mu">El carrito está vacío.</p> : carrito.map(i => (
                 <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--bd)' }}>
-                  <span>{i.nombre} (x{i.cantidad})</span>
+                  <div>
+                    <strong>{i.nombre}</strong>
+                    <div className="mu">Cantidad: {i.cantidad}</div>
+                  </div>
                   <strong>${(i.precio * i.cantidad).toLocaleString('es-CO')}</strong>
                 </div>
               ))}
+              {carrito.length > 0 && (
+                <button className="bt er w" style={{ marginTop: '16px' }} onClick={() => setCarrito([])}>Vaciar Carrito</button>
+              )}
             </div>
             <div className="cd">
               <h2 className="t">Pasarela de Pagos</h2>
@@ -402,14 +296,14 @@ export default function App() {
                 ))}
               </div>
               {medioPago === 'PSE' && (
-                <select className="f" value={bancoPse} onChange={e => setBancoPse(e.target.value)}>
+                <select className="f" value={banco} onChange={e => setBanco(e.target.value)}>
                   <option value="">-- Seleccionar Banco --</option>
                   <option value="Bancolombia">Bancolombia</option>
                   <option value="Davivienda">Davivienda</option>
                 </select>
               )}
-              <button className="bt ac w" onClick={procesarCompra} disabled={carrito.length === 0}>Pagar en Supabase</button>
-              <div style={{ marginTop: '14px', textAlign: 'center', fontWeight: 800 }}>{estadoPago}</div>
+              <button className="bt ac w" onClick={procesarPago} disabled={carrito.length === 0}>Pagar Ahora</button>
+              <div style={{ marginTop: '16px', textAlign: 'center', fontWeight: 800 }}>{estadoTransaccion}</div>
             </div>
           </div>
         )}
@@ -417,27 +311,36 @@ export default function App() {
         {usuario.rol === 'cliente' && paginaActiva === 'ayuda' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.1fr', gap: '20px' }}>
             <div className="cd">
-              <h2 className="t">Crear Ticket</h2>
+              <h2 className="t">Nuevo Ticket de Soporte</h2>
               <form onSubmit={crearTicket}>
                 <label className="l">Asunto</label>
-                <input className="f" value={asuntoTicket} onChange={e => setAsuntoTicket(e.target.value)} required />
+                <input className="f" value={asunto} onChange={e => setAsunto(e.target.value)} required />
                 <label className="l">Categoría</label>
-                <select className="f" value={catTicket} onChange={e => setCatTicket(e.target.value)}>
+                <select className="f" value={categoria} onChange={e => setCategoria(e.target.value)}>
                   <option value="Hardware">Hardware</option>
                   <option value="Software">Software</option>
                   <option value="Pagos">Pagos</option>
                 </select>
+                <label className="l">Prioridad</label>
+                <select className="f" value={prioridad} onChange={e => setPrioridad(e.target.value)}>
+                  <option value="Baja">Baja</option>
+                  <option value="Media">Media</option>
+                  <option value="Alta">Alta</option>
+                </select>
                 <label className="l">Descripción</label>
-                <textarea className="f" rows="3" value={descTicket} onChange={e => setDescTicket(e.target.value)} required></textarea>
+                <textarea className="f" rows="3" value={descripcion} onChange={e => setDescripcion(e.target.value)} required></textarea>
                 <button type="submit" className="bt ac w">Enviar Ticket</button>
               </form>
             </div>
             <div className="cd">
-              <h2 className="t">Mis Tickets</h2>
+              <h2 className="t">Mis Tickets Registrados</h2>
               {tickets.map(t => (
-                <div key={t.id} style={{ padding: '10px', border: '1px solid var(--bd)', borderRadius: '10px', marginBottom: '10px' }}>
-                  <strong>{t.asunto}</strong> - <span className="b ok">{t.estado}</span>
-                  <p style={{ margin: '4px 0', fontSize: '.85rem' }}>{t.descripcion}</p>
+                <div key={t.id} style={{ padding: '12px', border: '1px solid var(--bd)', borderRadius: '10px', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800 }}>
+                    <span>{t.asunto}</span>
+                    <span className={`b ${t.estado === 'Resuelto' ? 'ok' : 'ac'}`}>{t.estado}</span>
+                  </div>
+                  <p style={{ margin: '6px 0', fontSize: '.9rem' }}>{t.descripcion}</p>
                 </div>
               ))}
             </div>
@@ -446,7 +349,7 @@ export default function App() {
 
         {usuario.rol === 'cliente' && paginaActiva === 'equipos' && (
           <div className="cd">
-            <h2 className="t">Mis Dispositivos Asociados</h2>
+            <h2 className="t">Mis Dispositivos en Funcionamiento</h2>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.9rem' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid var(--bd)', textAlign: 'left' }}>
