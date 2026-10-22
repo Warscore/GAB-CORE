@@ -68,7 +68,11 @@ export default function Catalogo({ productos, alAgregar, terminoBusq }) {
         )}
       </div>
     </div>
-    const ETIQUETAS = {
+       </div>
+  );
+}
+
+const ETIQUETAS = {
   procesador: 'Procesador',
   ram: 'RAM',
   disco: 'Disco',
@@ -77,6 +81,7 @@ export default function Catalogo({ productos, alAgregar, terminoBusq }) {
   conectividad: 'Conectividad',
   sistema: 'Sistema operativo',
   uso: 'Uso recomendado'
+};
 };
   );
 }
