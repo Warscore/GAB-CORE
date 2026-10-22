@@ -31,7 +31,7 @@ export default function App() {
   const [prioridad, setPrioridad] = useState('Media');
   const [descripcion, setDescripcion] = useState('');
 
-  // Pasarela de Pagos Dinámica
+  // Pasarela de Pagos Completa y Dinámica
   const [medioPago, setMedioPago] = useState('PSE');
   const [bancoSeleccionado, setBancoSeleccionado] = useState('');
   const [datosTarjeta, setDatosTarjeta] = useState({ numero: '', fecha: '', cvc: '' });
@@ -39,7 +39,7 @@ export default function App() {
   const [telefonoBilletera, setTelefonoBilletera] = useState('');
   const [estadoTransaccion, setEstadoTransaccion] = useState('Pendiente');
 
-  // Bancos PSE ampliados para Colombia
+  // Lista ampliada de bancos PSE en Colombia
   const bancosPSE = [
     'Bancolombia',
     'Banco de Bogotá',
@@ -60,6 +60,7 @@ export default function App() {
     'Banco Pichincha'
   ];
 
+  // Funciones de control de cantidades en el carrito
   const actualizarCantidad = (id, nuevaCantidad) => {
     if (nuevaCantidad <= 0) {
       eliminarDelCarrito(id);
@@ -328,11 +329,11 @@ export default function App() {
 
         {usuario.rol === 'cliente' && paginaActiva === 'pagos' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-            {/* Resumen del pedido con botones + / - y eliminar */}
+            {/* Resumen del pedido con controles de cantidad (+ / - / eliminar) */}
             <div className="cd">
               <h2 className="t">Resumen del Pedido</h2>
               {carrito.length === 0 ? <p className="mu">El carrito está vacío.</p> : carrito.map(i => (
-                <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--bd)' }}>
+                <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--bd)' }}>
                   <div>
                     <strong>{i.nombre}</strong>
                     <div className="mu">${Number(i.precio).toLocaleString('es-CO')} c/u</div>
@@ -350,7 +351,7 @@ export default function App() {
               )}
             </div>
 
-            {/* Pasarela de pagos interactiva con campos dinámicos */}
+            {/* Pasarela de pagos con opciones completas de PSE y campos dinámicos */}
             <div className="cd">
               <h2 className="t">Pasarela de Pagos</h2>
               <label className="l">Medio de Pago</label>
