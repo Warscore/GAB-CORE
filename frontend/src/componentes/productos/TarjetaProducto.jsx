@@ -1,58 +1,76 @@
-import React, { useState } from 'react';
+import React from 'react';
 
-export default function TarjetaProducto({ producto, alAgregar }) {
-  const [verDetalle, setVerDetalle] = useState(false);
+export default function TarjetaProducto({ producto, agregarAlCarrito }) {
+
+  const formatearPrecio = (precio) => {
+    return new Number(precio).toLocaleString('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0
+    });
+  };
 
   return (
-    <div className="pc">
+    <div style={{
+      backgroundColor: '#111a24',
+      border: '1px solid #1f2937',
+      borderRadius: '12px',
+      padding: '24px',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.4)',
+      color: '#fff',
+      transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+    }}>
       <div>
-        <span className="b ac" style={{ fontSize: '.68rem' }}>{producto.categoria}</span>
-        {producto.enOferta && <span className="b er" style={{ marginLeft: '6px', fontSize: '.68rem' }}>Oferta</span>}
-        <h3>{producto.nombre}</h3>
-        <p style={{ fontSize: '.82rem', color: 'var(--mu)' }}>{producto.resumen}</p>
-        {producto.descripcion && <p style={{ fontSize: '.78rem', color: 'var(--tx)', marginTop: '4px' }}>{producto.descripcion}</p>}
-        {producto.specs && (
-          <ul style={{ listStyle: 'none', margin: '8px 0 0', padding: 0, fontSize: '.76rem', display: 'grid', gap: '4px' }}>
-            {['procesador', 'ram', 'disco', 'pantalla'].filter(k => producto.specs[k]).map(k => (
-              <li key={k}><b style={{ color: 'var(--mu)', textTransform: 'uppercase', fontSize: '.68rem' }}>{ETIQUETAS[k]}: </b>{producto.specs[k]}</li>
-            ))}
-          </ul>
-        )}
-        <div className="pr">${producto.precio.toLocaleString('es-CO')} COP</div>
-      </div>
-      <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <button className="bt ac" style={{ width: '100%' }} onClick={() => alAgregar(producto)}>
-          + Agregar al Pedido
-        </button>
-        <button className="bt" style={{ width: '100%', background: 'transparent', color: 'var(--tx)', border: '1px solid var(--bd)' }} onClick={() => setVerDetalle(!verDetalle)}>
-          {verDetalle ? 'Ocultar Ficha' : 'Ficha Técnica'}
-        </button>
+        <span style={{
+          display: 'inline-block',
+          fontSize: '11px',
+          padding: '4px 10px',
+          borderRadius: '20px',
+          backgroundColor: '#0ea5e9',
+          color: '#fff',
+          marginBottom: '12px',
+          fontWeight: 'bold',
+          letterSpacing: '0.5px',
+          textTransform: 'uppercase'
+        }}>
+          {producto.categoria}
+        </span>
+        <h3 style={{ fontSize: '18px', margin: '0 0 10px 0', color: '#fff', fontWeight: '600' }}>
+          {producto.nombre}
+        </h3>
+        <p style={{ fontSize: '14px', color: '#9ca3af', margin: '0 0 20px 0', lineHeight: '1.5' }}>
+          {producto.descripcion}
+        </p>
       </div>
 
-           {verDetalle && (
-        <div style={{ marginTop: '10px', padding: '10px', background: 'var(--bg)', borderRadius: '8px', fontSize: '.78rem' }}>
-          <strong>Ficha técnica:</strong>
-          {producto.specs ? (
-            <ul style={{ listStyle: 'none', margin: '6px 0 0', padding: 0, display: 'grid', gap: '4px' }}>
-              {Object.entries(producto.specs).map(([clave, valor]) => (
-                <li key={clave}><b>{ETIQUETAS[clave] || clave}:</b> {valor}</li>
-              ))}
-            </ul>
-          ) : (
-            <p style={{ margin: '4px 0' }}>{producto.especificaciones || 'Especificaciones disponibles bajo consulta.'}</p>
-          )}
+      <div>
+        <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#38bdf8', marginBottom: '16px' }}>
+          {formatearPrecio(producto.precio)}
         </div>
-      )}
+        <button
+          onClick={() => agregarAlCarrito(producto)}
+          style={{
+            width: '100%',
+            padding: '12px',
+            backgroundColor: '#0284c7',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '8px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            fontSize: '14px',
+            letterSpacing: '0.5px',
+            transition: 'background-color 0.2s'
+          }}
+          onMouseOver={(e) => e.target.style.backgroundColor = '#0369a1'}
+          onMouseOut={(e) => e.target.style.backgroundColor = '#0284c7'}
+        >
+          AGREGAR AL CARRITO
+        </button>
+      </div>
     </div>
   );
 }
-const ETIQUETAS = {
-  procesador: 'Procesador',
-  ram: 'RAM',
-  disco: 'Disco',
-  pantalla: 'Pantalla',
-  graficos: 'Gráficos',
-  conectividad: 'Conectividad',
-  sistema: 'Sistema operativo',
-  uso: 'Uso recomendado'
-};
