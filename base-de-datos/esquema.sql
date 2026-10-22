@@ -7,6 +7,7 @@ CREATE TABLE clientes (
     telefono VARCHAR(30),
     ciudad VARCHAR(50),
     contrasena_hash VARCHAR(255) NOT NULL,
+    rol VARCHAR(30) DEFAULT 'cliente',
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -26,6 +27,7 @@ CREATE TABLE ordenes (
     cliente_id INT REFERENCES clientes(id),
     total NUMERIC(12, 2) NOT NULL,
     estado_pago VARCHAR(30) DEFAULT 'Pendiente',
+    medio_pago VARCHAR(50),
     fecha_orden TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -42,9 +44,15 @@ CREATE TABLE tickets_soporte (
 
 CREATE TABLE equipos (
     id SERIAL PRIMARY KEY,
+    cliente_id INT REFERENCES clientes(id),
     serial VARCHAR(50) UNIQUE NOT NULL,
     nombre_equipo VARCHAR(100) NOT NULL,
-    estado VARCHAR(30) NOT NULL, -- Operativo, Mantenimiento, Vencido
+    estado VARCHAR(30) NOT NULL, -- Operativo, Mantenimiento, Vencido, Dañado
     proximo_mantenimiento VARCHAR(50),
     en_oferta BOOLEAN DEFAULT FALSE
 );
+
+-- Inserción inicial obligatoria del Administrador General
+INSERT INTO clientes (tipo_documento, numero_documento, nombre_razon_social, correo, contrasena_hash, rol)
+VALUES ('CC', '1000000000', 'Administrador GAPCore', 'admin@gapcore.com', 'Admin123', 'admin')
+ON CONFLICT (correo) DO NOTHING;
